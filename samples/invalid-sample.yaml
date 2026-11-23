@@ -1,0 +1,25 @@
+openapi: 3.0.3
+info:
+  title: 오류 케이스 샘플
+  # version 필수 필드 누락, 존재하지 않는 $ref 참조, 잘못된 응답 코드 정의
+paths:
+  /broken:
+    get:
+      operationId: getBroken
+      responses:
+        '200':
+          description: 존재하지 않는 스키마를 참조
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoesNotExist'
+    post:
+      operationId: getBroken
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: unknown-type
+      responses:
+        'abc':
+          description: 잘못된 상태 코드

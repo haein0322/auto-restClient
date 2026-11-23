@@ -1,0 +1,70 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "레거시 메모 API (Swagger 2.0)",
+    "description": "Swagger 2.0 파서 호환성 확인용 소형 샘플",
+    "version": "1.0.0"
+  },
+  "host": "localhost:8090",
+  "basePath": "/mock-legacy",
+  "schemes": ["http"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
+  "paths": {
+    "/memos": {
+      "get": {
+        "operationId": "listMemos",
+        "summary": "메모 목록 조회",
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "schema": { "type": "array", "items": { "$ref": "#/definitions/Memo" } }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createMemo",
+        "summary": "메모 등록",
+        "parameters": [
+          { "in": "body", "name": "body", "required": true, "schema": { "$ref": "#/definitions/MemoRequest" } }
+        ],
+        "responses": {
+          "201": { "description": "등록 성공", "schema": { "$ref": "#/definitions/Memo" } },
+          "400": { "description": "잘못된 요청" }
+        }
+      }
+    },
+    "/memos/{memoId}": {
+      "get": {
+        "operationId": "getMemo",
+        "summary": "메모 단건 조회",
+        "parameters": [
+          { "name": "memoId", "in": "path", "required": true, "type": "integer", "format": "int64" }
+        ],
+        "responses": {
+          "200": { "description": "조회 성공", "schema": { "$ref": "#/definitions/Memo" } },
+          "404": { "description": "대상 없음" }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "MemoRequest": {
+      "type": "object",
+      "required": ["title"],
+      "properties": {
+        "title": { "type": "string", "maxLength": 100 },
+        "content": { "type": "string" }
+      }
+    },
+    "Memo": {
+      "type": "object",
+      "required": ["id", "title"],
+      "properties": {
+        "id": { "type": "integer", "format": "int64" },
+        "title": { "type": "string" },
+        "content": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,0 +1,429 @@
+openapi: 3.0.3
+info:
+  title: 쇼핑몰 샘플 API
+  description: |
+    AI RestClient 생성/통신테스트 시스템 검증용 샘플 명세입니다.
+    내장 Mock 서버(`/mock`)가 이 명세와 동일하게 동작합니다.
+    인증이 필요한 API는 `X-API-KEY: demo-key` 헤더를 사용하세요.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8090/mock
+    description: 내장 Mock 서버
+tags:
+  - name: Product
+    description: 상품 관리
+  - name: Customer
+    description: 고객 관리
+  - name: Order
+    description: 주문 관리
+paths:
+  /products:
+    get:
+      tags: [Product]
+      operationId: listProducts
+      summary: 상품 목록 조회
+      description: 페이징과 카테고리 필터를 지원합니다. 인증 없이 호출할 수 있습니다.
+      security: []
+      parameters:
+        - name: page
+          in: query
+          description: 페이지 번호(0부터 시작)
+          schema: { type: integer, minimum: 0, default: 0 }
+        - name: size
+          in: query
+          description: 페이지 크기
+          schema: { type: integer, minimum: 1, maximum: 100, default: 10 }
+        - name: category
+          in: query
+          description: 카테고리 필터
+          schema: { $ref: '#/components/schemas/ProductCategory' }
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductPage' }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    post:
+      tags: [Product]
+      operationId: createProduct
+      summary: 상품 등록
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProductRequest' }
+      responses:
+        '201':
+          description: 등록 성공
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Product' }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /products/{productId}:
+    parameters:
+      - $ref: '#/components/parameters/ProductId'
+    get:
+      tags: [Product]
+      operationId: getProduct
+      summary: 상품 단건 조회
+      security: []
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Product' }
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Product]
+      operationId: updateProduct
+      summary: 상품 수정
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProductRequest' }
+      responses:
+        '200':
+          description: 수정 성공
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Product' }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Product]
+      operationId: deleteProduct
+      summary: 상품 삭제
+      responses:
+        '204':
+          description: 삭제 성공
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /customers:
+    get:
+      tags: [Customer]
+      operationId: listCustomers
+      summary: 고객 목록 조회
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Customer' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags: [Customer]
+      operationId: createCustomer
+      summary: 고객 등록
+      description: 이메일은 중복될 수 없습니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CustomerRequest' }
+      responses:
+        '201':
+          description: 등록 성공
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Customer' }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /customers/{customerId}:
+    parameters:
+      - $ref: '#/components/parameters/CustomerId'
+    get:
+      tags: [Customer]
+      operationId: getCustomer
+      summary: 고객 단건 조회
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Customer' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /orders:
+    get:
+      tags: [Order]
+      operationId: listOrders
+      summary: 주문 목록 조회
+      parameters:
+        - name: status
+          in: query
+          description: 주문 상태 필터
+          schema: { $ref: '#/components/schemas/OrderStatus' }
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Order' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags: [Order]
+      operationId: createOrder
+      summary: 주문 생성
+      description: 고객과 상품이 존재해야 하며, 재고가 부족하면 409를 반환합니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OrderRequest' }
+      responses:
+        '201':
+          description: 주문 생성 성공
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /orders/{orderId}:
+    parameters:
+      - $ref: '#/components/parameters/OrderId'
+    get:
+      tags: [Order]
+      operationId: getOrder
+      summary: 주문 단건 조회
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /orders/{orderId}/cancel:
+    parameters:
+      - $ref: '#/components/parameters/OrderId'
+    post:
+      tags: [Order]
+      operationId: cancelOrder
+      summary: 주문 취소
+      description: 이미 취소된 주문은 409를 반환하며, 취소 시 재고가 복원됩니다.
+      responses:
+        '200':
+          description: 취소 성공
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+security:
+  - ApiKeyAuth: []
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+      description: 데모용 API 키(`demo-key`)
+  parameters:
+    ProductId:
+      name: productId
+      in: path
+      required: true
+      description: 상품 ID
+      schema: { type: integer, format: int64 }
+    CustomerId:
+      name: customerId
+      in: path
+      required: true
+      description: 고객 ID
+      schema: { type: integer, format: int64 }
+    OrderId:
+      name: orderId
+      in: path
+      required: true
+      description: 주문 ID
+      schema: { type: integer, format: int64 }
+  responses:
+    BadRequest:
+      description: 잘못된 요청
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Unauthorized:
+      description: 인증 실패(API 키 누락 또는 불일치)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    NotFound:
+      description: 대상을 찾을 수 없음
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Conflict:
+      description: 상태 충돌(중복, 재고 부족, 이미 취소됨 등)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+  schemas:
+    ProductCategory:
+      type: string
+      description: 상품 카테고리
+      enum: [ELECTRONICS, BOOKS, FOOD, FASHION]
+    ProductRequest:
+      type: object
+      description: 상품 등록/수정 요청
+      required: [name, price, category]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: 상품명
+        description:
+          type: string
+          maxLength: 500
+          description: 상품 설명
+        price:
+          type: number
+          minimum: 0
+          description: 가격(원)
+        category:
+          $ref: '#/components/schemas/ProductCategory'
+        stock:
+          type: integer
+          minimum: 0
+          default: 0
+          description: 재고 수량
+    Product:
+      description: 상품
+      allOf:
+        - $ref: '#/components/schemas/ProductRequest'
+        - type: object
+          required: [id, createdAt]
+          properties:
+            id:
+              type: integer
+              format: int64
+              description: 상품 ID
+            createdAt:
+              type: string
+              format: date-time
+              description: 등록 일시
+    ProductPage:
+      type: object
+      required: [items, page, size, totalElements]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Product' }
+        page: { type: integer }
+        size: { type: integer }
+        totalElements: { type: integer, format: int64 }
+    CustomerGrade:
+      type: string
+      enum: [BASIC, VIP]
+    CustomerRequest:
+      type: object
+      description: 고객 등록 요청
+      required: [name, email]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: 고객명
+        email:
+          type: string
+          format: email
+          description: 이메일(중복 불가)
+        grade:
+          $ref: '#/components/schemas/CustomerGrade'
+    Customer:
+      type: object
+      required: [id, name, email, grade, createdAt]
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        email: { type: string, format: email }
+        grade: { $ref: '#/components/schemas/CustomerGrade' }
+        createdAt: { type: string, format: date-time }
+    OrderStatus:
+      type: string
+      enum: [CREATED, CANCELLED]
+    OrderItemRequest:
+      type: object
+      required: [productId, quantity]
+      properties:
+        productId: { type: integer, format: int64, description: 상품 ID }
+        quantity: { type: integer, minimum: 1, maximum: 100, description: 주문 수량 }
+    OrderRequest:
+      type: object
+      description: 주문 생성 요청
+      required: [customerId, items]
+      properties:
+        customerId: { type: integer, format: int64, description: 고객 ID }
+        items:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/OrderItemRequest' }
+    OrderItem:
+      type: object
+      required: [productId, quantity, unitPrice]
+      properties:
+        productId: { type: integer, format: int64 }
+        quantity: { type: integer }
+        unitPrice: { type: number }
+    Order:
+      type: object
+      required: [id, customerId, items, totalAmount, status, createdAt]
+      properties:
+        id: { type: integer, format: int64 }
+        customerId: { type: integer, format: int64 }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/OrderItem' }
+        totalAmount: { type: number }
+        status: { $ref: '#/components/schemas/OrderStatus' }
+        createdAt: { type: string, format: date-time }
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: 오류 코드
+        message:
+          type: string
+          description: 오류 메시지
