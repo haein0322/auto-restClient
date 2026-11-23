@@ -100,13 +100,17 @@ cd backend && ./gradlew test
 cd frontend && npx tsc --noEmit && npx eslint src
 
 # 브라우저 E2E (백엔드·프론트엔드를 먼저 실행)
-cd e2e && npm install && npx playwright install chromium && npm run test:step5
+cd e2e && npm install && npx playwright install chromium
+npm run test:step1-4   # 1~4단계 (38건)
+npm run test:step5     # 5단계 (17건)
+npm test               # 전체
 ```
 
-E2E는 1~4단계를 API로 준비한 뒤 5단계 화면을 검증합니다(잠금, 입력 검증, 외부 호스트 거부, 통과/건너뜀, 반복 실행, 실패 원인 분석, 새로고침 복원).
+- 1~4단계: 샘플·파일·URL 등록과 오류 처리(잘못된 명세, 확장자, SSRF 방어), 단계 잠금, AI 분석과 새로고침 복원, 패키지명 검증·컴파일·소스 뷰어·ZIP 다운로드, 샘플 생성·편집·재생성·검증을 화면에서 따라가며 확인합니다.
+- 5단계: 1~4단계를 API로 준비한 뒤 잠금, 입력 검증, 외부 호스트 거부, 통과/건너뜀, 반복 실행, 실패 원인 분석, 새로고침 복원을 확인합니다.
+- 실패 시와 주요 화면의 스크린샷은 `e2e/e2e-output/`에 저장됩니다.
 
 ## 알려진 한계
 
 - 실제 Claude의 분석·샘플·원인 분석 품질은 키가 없어 검증하지 못했습니다. 요청 형태와 재시도·대체 루프만 스텁으로 확인했습니다.
-- E2E는 5단계만 정식 스크립트로 포함되어 있습니다. 1~4단계 브라우저 E2E는 임시 폴더에 있던 스크립트가 유실되어 포함하지 못했습니다.
 - 개발 DB는 `backend/data/`의 H2 파일이며, 테스트는 인메모리 DB로 격리됩니다.

@@ -2,6 +2,12 @@
   "name": "ai-restclient-e2e",
   "private": true,
   "type": "module",
-  "scripts": { "test:step5": "node step5-test.mjs" },
-  "devDependencies": { "playwright": "^1.50.0" }
+  "scripts": {
+    "test:step1-4": "node step1-4-test.mjs",
+    "test:step5": "node step5-test.mjs",
+    "test": "node step1-4-test.mjs && node step5-test.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.50.0"
+  }
 }
