@@ -6,7 +6,7 @@ Swagger(OpenAPI) 명세를 AI로 분석해 Java `RestClient` 코드를 자동 �
 
 | 단계 | 화면 | 하는 일 |
 |------|------|---------|
-| 1 | Swagger 업로드 | 파일·URL·내장 샘플로 명세를 등록하고 파싱·검증 (OpenAPI 3.x, Swagger 2.0 변환 지원) |
+| 1 | Swagger 업로드 | 파일·URL·내장 샘플로 명세를 등록하고 파싱·검증 (OpenAPI 3.x, Swagger 2.0 변환 지원). 엔드포인트 목록의 화살표로 미리 만든 샘플 데이터를 확인 |
 | 2 | AI 명세 분석 | 엔드포인트 목적·위험도(조회/변경/삭제)·호출 순서·의존관계·인증 방식 분석. 서버가 명세와 대조해 검증 |
 | 3 | RestClient 생성 | 분석 결과의 메서드명으로 DTO와 `RestClient` 클라이언트를 생성, 인메모리 컴파일로 검증, ZIP 다운로드 |
 | 4 | 샘플 데이터 | 엔드포인트별 요청 샘플 생성. 명세(필수값·enum·범위·형식)로 검증하고 편집·재생성 가능 |
@@ -18,7 +18,7 @@ Swagger(OpenAPI) 명세를 AI로 분석해 Java `RestClient` 코드를 자동 �
 AI-RestClient/
 ├─ backend/    Spring Boot 3 (Java 17), H2 + Flyway, Gradle
 ├─ frontend/   Next.js 15, React 19, Tailwind, shadcn/ui, Zustand, React Hook Form + Zod
-├─ samples/    테스트용 명세 (shop-sample.yaml, legacy-v2-sample.json, invalid-sample.yaml)
+├─ samples/    명세 파일 (sample-api.yaml: 화면에 노출되는 샘플 API / 나머지는 자동 테스트 전용)
 ├─ e2e/        Playwright 브라우저 E2E
 └─ docs/       문서
 ```
@@ -38,7 +38,7 @@ npm install
 npm run dev
 ```
 
-브라우저에서 http://localhost:3000 을 엽니다. 1단계에서 "샘플 불러오기"로 `shop-sample`을 선택하면 키 없이 전체 흐름을 체험할 수 있습니다.
+브라우저에서 http://localhost:3000 을 엽니다. 1단계에서 "샘플 불러오기"의 **샘플 API**(엔드포인트 3개)를 불러오면 키 없이 전체 흐름을 체험할 수 있습니다.
 
 ## AI 설정
 
@@ -54,11 +54,21 @@ AI 응답은 신뢰하지 않고 서버가 항상 검증합니다.
 - 샘플: 검증 실패 시 오류를 AI에게 돌려줘 최대 2회 재생성하고, 끝내 실패하면 규칙 기반 값으로 대체합니다(출처 `FALLBACK`).
 - 원인 분석: AI 호출이 실패하거나 일부 케이스가 누락되면 규칙 기반 진단으로 채웁니다.
 
-## 내장 Mock 서버
+## 샘플 API와 내장 Mock 서버
 
-실제 테스트 대상 서버가 없어도 통신 테스트를 해볼 수 있도록 `/mock` 경로에 쇼핑몰 Mock API가 내장되어 있습니다.
+실제 테스트 대상 서버가 없어도 통신 테스트를 해볼 수 있도록 `/mock` 경로에 샘플 API(`samples/sample-api.yaml`)를 구현한 Mock이 내장되어 있습니다.
+- 엔드포인트 3개: `listItems`(GET /items), `createItem`(POST /items), `getItem`(GET /items/{itemId})
 - Base URL: `http://localhost:8090/mock`
 - 인증: `X-API-KEY: demo-key`
+
+### 1단계 샘플 데이터 미리보기
+
+명세를 등록하면 엔드포인트 목록 왼쪽의 화살표로 각 엔드포인트의 샘플 요청 데이터를 펼쳐 볼 수 있습니다(`GET /api/specs/{id}/samples/preview`).
+- 명세만으로 규칙 기반으로 만들며 AI를 호출하지 않고, 저장도 하지 않습니다. 4단계에서 만드는 샘플과는 별개입니다.
+
+### 자동 테스트 전용 명세
+
+`shop-sample`(12개 엔드포인트, DELETE·ID 연쇄·중복 검증 등), `legacy-v2-sample`(Swagger 2.0), `invalid-sample`(오류 명세)은 화면 목록에는 나오지 않고 자동 테스트에서만 이름으로 불러옵니다. 쇼핑몰 Mock(`/mock/products` 등)도 이 테스트용입니다.
 
 ## 통신 테스트 동작 방식
 
@@ -83,6 +93,7 @@ AI 응답은 신뢰하지 않고 서버가 항상 검증합니다.
 | GET | `/api/specs/{id}/client/download` | ZIP 다운로드 |
 | POST / GET | `/api/specs/{id}/samples` | 샘플 전체 생성 / 조회 |
 | PUT / POST | `/api/specs/{id}/samples/{operationId}`, `.../regenerate` | 샘플 편집·재생성 |
+| GET | `/api/specs/{id}/samples/preview` | 1단계 미리보기 샘플(저장 안 함) |
 | GET | `/api/specs/{id}/test/defaults` | 입력란 기본값 |
 | POST (SSE) | `/api/specs/{id}/test/runs` | 통신 테스트 실행 |
 | GET | `/api/specs/{id}/test/runs`, `.../runs/{runId}` | 실행 이력·결과 |
@@ -93,7 +104,7 @@ SSE 이벤트는 `progress` → (`result` | `error`) 순서입니다. 입력 검
 ## 테스트
 
 ```bash
-# 백엔드 단위·통합 테스트 (95건)
+# 백엔드 단위·통합 테스트 (101건)
 cd backend && ./gradlew test
 
 # 프론트엔드 정적 검사
@@ -101,8 +112,8 @@ cd frontend && npx tsc --noEmit && npx eslint src
 
 # 브라우저 E2E (백엔드·프론트엔드를 먼저 실행)
 cd e2e && npm install && npx playwright install chromium
-npm run test:step1-4   # 1~4단계 (38건)
-npm run test:step5     # 5단계 (17건)
+npm run test:step1-4   # 1~4단계 (44건)
+npm run test:step5     # 5단계 (19건)
 npm test               # 전체
 ```
 

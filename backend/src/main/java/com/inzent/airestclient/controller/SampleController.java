@@ -2,6 +2,7 @@ package com.inzent.airestclient.controller;
 
 import com.inzent.airestclient.common.ApiResponse;
 import com.inzent.airestclient.dto.SampleDtos.SampleItem;
+import com.inzent.airestclient.dto.SampleDtos.SamplePreview;
 import com.inzent.airestclient.dto.SampleDtos.SampleSetView;
 import com.inzent.airestclient.dto.SampleDtos.UpdateSampleRequest;
 import com.inzent.airestclient.service.SampleGenerationService;
@@ -31,6 +32,12 @@ public class SampleController {
   @ResponseStatus(HttpStatus.CREATED)
   public ApiResponse<SampleSetView> generate(@PathVariable Long specId) {
     return ApiResponse.ok(service.generate(specId));
+  }
+
+  /** 1단계 미리보기: 명세만으로 만든 규칙 기반 샘플(저장 안 함, 단계 잠금 없음) */
+  @GetMapping("/preview")
+  public ApiResponse<SamplePreview> preview(@PathVariable Long specId) {
+    return ApiResponse.ok(service.preview(specId));
   }
 
   @GetMapping

@@ -50,4 +50,10 @@ public final class SampleDtos {
       Long specId, String provider, int validCount, int total, List<String> warnings, List<SampleItem> samples) {}
 
   public record UpdateSampleRequest(JsonNode request) {}
+
+  /** 1단계 엔드포인트 목록에서 보여 주는 미리보기 샘플 한 건(저장되지 않는다). */
+  public record SamplePreviewItem(String operationId, JsonNode request) {}
+
+  /** 명세 등록 직후 엔드포인트별로 규칙 기반으로 만든 미리보기 샘플 */
+  public record SamplePreview(Long specId, List<SamplePreviewItem> samples) {}
 }

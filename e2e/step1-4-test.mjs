@@ -43,9 +43,12 @@ async function openUploadHome() {
   await page.getByRole("tab", { name: "샘플 불러오기" }).waitFor({ timeout: 20000 });
 }
 
-async function loadShopSample() {
+async function loadSampleApi() {
   await openUploadHome();
-  await page.getByTestId("load-sample-shop-sample").click();
+  await page.getByTestId("load-sample-sample-api").waitFor({ timeout: 20000 });
+  const listText = await page.locator("main").innerText();
+  check("[1단계] 샘플 목록은 '샘플 API' 하나만 표시", (await page.locator('[data-testid^="load-sample-"]').count()) === 1 && listText.includes("샘플 API") && !listText.includes("쇼핑몰") && !listText.includes("12개"), listText);
+  await page.getByTestId("load-sample-sample-api").click();
   await page.waitForURL(/\/specs\/\d+\/upload/, { timeout: 30000 });
   return Number(page.url().match(/specs\/(\d+)/)[1]);
 }
@@ -55,9 +58,25 @@ let specId = 0;
 try {
   // ───────────── 1단계: Swagger 업로드 ─────────────
   await step("1단계 샘플 불러오기", async () => {
-    specId = await loadShopSample();
-    await page.getByText("엔드포인트 12개").first().waitFor({ timeout: 20000 });
-    check("[1단계] 샘플 등록 후 결과 화면으로 이동하고 엔드포인트 12개 표시", true);
+    specId = await loadSampleApi();
+    await page.getByText("엔드포인트 3개").first().waitFor({ timeout: 20000 });
+    check("[1단계] 샘플 등록 후 결과 화면으로 이동하고 엔드포인트 3개 표시", true);
+
+    // 엔드포인트 목록의 화살표를 누르면 미리 만들어 둔 샘플 데이터가 펼쳐진다.
+    const toggle = page.getByTestId("endpoint-toggle-createItem");
+    await toggle.waitFor({ timeout: 20000 });
+    check("[1단계] 엔드포인트 3개 모두 화살표 제공", (await page.locator('[data-testid^="endpoint-toggle-"]').count()) === 3);
+    check("[1단계] 처음에는 샘플 데이터가 접혀 있음", (await page.getByTestId("endpoint-sample-createItem").count()) === 0);
+    await toggle.click();
+    const sampleBox = page.getByTestId("endpoint-sample-createItem");
+    await sampleBox.waitFor({ timeout: 5000 });
+    const sampleText = await sampleBox.innerText();
+    check("[1단계] 화살표를 누르면 샘플 데이터(요청 본문) 표시", sampleText.includes('"body"') && sampleText.includes('"name"') && sampleText.includes('"price"'), sampleText);
+    await page.screenshot({ path: "e2e-output/step1-preview.png", fullPage: true });
+    await toggle.click();
+    check("[1단계] 다시 누르면 접힘", (await page.getByTestId("endpoint-sample-createItem").count()) === 0);
+    await page.getByTestId("endpoint-toggle-getItem").click();
+    check("[1단계] 경로 파라미터 샘플 표시", (await page.getByTestId("endpoint-sample-getItem").innerText()).includes("itemId"));
 
     const nav = page.getByRole("navigation", { name: "진행 단계" });
     check("[1단계] 등록 직후 3~5단계는 잠김", (await nav.locator('[aria-disabled="true"]').count()) === 3);
@@ -149,7 +168,7 @@ try {
     await alertWith("예약어").waitFor({ timeout: 5000 });
     check("[3단계] Java 예약어 패키지명은 거부", true);
 
-    await pkg.fill("com.example.shop");
+    await pkg.fill("com.example.sample");
     await page.getByTestId("generate-client").click();
     await page.getByTestId("compile-success").waitFor({ timeout: 90000 });
     check("[3단계] 코드 생성 후 컴파일 성공 표시", true);
@@ -169,7 +188,7 @@ try {
 
     await page.reload();
     await page.getByTestId("compile-success").waitFor({ timeout: 20000 });
-    check("[3단계] 새로고침 후에도 생성 결과 복원", (await pkg.inputValue()) === "com.example.shop");
+    check("[3단계] 새로고침 후에도 생성 결과 복원", (await pkg.inputValue()) === "com.example.sample");
   });
 
   // ───────────── 4단계: 샘플 데이터 ─────────────
@@ -180,10 +199,10 @@ try {
 
     await page.getByTestId("generate-samples").click();
     await page.getByTestId("valid-count").waitFor({ timeout: 90000 });
-    check("[4단계] 샘플 생성 후 '유효 12 / 전체 12'", (await page.getByTestId("valid-count").innerText()).replace(/\s+/g, " ") === "유효 12 / 전체 12");
-    check("[4단계] 엔드포인트별 샘플 카드 12개", (await page.locator('[data-testid^="sample-"]').count()) === 12);
+    check("[4단계] 샘플 생성 후 '유효 3 / 전체 3'", (await page.getByTestId("valid-count").innerText()).replace(/\s+/g, " ") === "유효 3 / 전체 3");
+    check("[4단계] 엔드포인트별 샘플 카드 3개", (await page.locator('[data-testid^="sample-"]').count()) === 3);
 
-    const editor = page.getByLabel("createProduct 샘플 JSON");
+    const editor = page.getByLabel("createItem 샘플 JSON");
     const original = JSON.parse(await editor.inputValue());
 
     // JSON 문법 오류는 서버 요청 없이 즉시 안내
@@ -191,7 +210,7 @@ try {
     const countPut = (request) => request.method() === "PUT" && request.url().includes("/samples/") && putCalls++;
     page.on("request", countPut);
     await editor.fill("{ invalid json");
-    await page.getByTestId("save-createProduct").click();
+    await page.getByTestId("save-createItem").click();
     await alertWith("JSON 형식 오류").waitFor({ timeout: 5000 });
     page.off("request", countPut);
     check("[4단계] JSON 문법 오류는 저장 시 안내", true);
@@ -201,28 +220,28 @@ try {
     const invalid = structuredClone(original);
     invalid.body.price = -10;
     await editor.fill(JSON.stringify(invalid, null, 2));
-    await page.getByTestId("save-createProduct").click();
-    await page.getByTestId("errors-createProduct").waitFor({ timeout: 20000 });
-    check("[4단계] 명세를 위반한 샘플은 오류 목록 표시", (await page.getByTestId("errors-createProduct").innerText()).includes("price"));
-    check("[4단계] 위반 편집 후 유효 개수 11", (await page.getByTestId("valid-count").innerText()).includes("유효 11"));
+    await page.getByTestId("save-createItem").click();
+    await page.getByTestId("errors-createItem").waitFor({ timeout: 20000 });
+    check("[4단계] 명세를 위반한 샘플은 오류 목록 표시", (await page.getByTestId("errors-createItem").innerText()).includes("price"));
+    check("[4단계] 위반 편집 후 유효 개수 2", (await page.getByTestId("valid-count").innerText()).includes("유효 2"));
 
     // 재생성하면 다시 유효
-    await page.getByTestId("regenerate-createProduct").click();
-    await page.waitForFunction(() => document.querySelector('[data-testid="valid-count"]')?.textContent?.includes("유효 12"), null, { timeout: 30000 });
-    check("[4단계] 재생성으로 유효 12 복구", true);
+    await page.getByTestId("regenerate-createItem").click();
+    await page.waitForFunction(() => document.querySelector('[data-testid="valid-count"]')?.textContent?.includes("유효 3"), null, { timeout: 30000 });
+    check("[4단계] 재생성으로 유효 3 복구", true);
 
     // 유효한 편집은 직접 편집 출처로 저장
-    const valid = JSON.parse(await page.getByLabel("createProduct 샘플 JSON").inputValue());
+    const valid = JSON.parse(await page.getByLabel("createItem 샘플 JSON").inputValue());
     valid.body.name = "무선 키보드";
-    await page.getByLabel("createProduct 샘플 JSON").fill(JSON.stringify(valid, null, 2));
-    await page.getByTestId("save-createProduct").click();
-    await page.getByTestId("sample-createProduct").getByText("직접 편집").waitFor({ timeout: 20000 });
+    await page.getByLabel("createItem 샘플 JSON").fill(JSON.stringify(valid, null, 2));
+    await page.getByTestId("save-createItem").click();
+    await page.getByTestId("sample-createItem").getByText("직접 편집").waitFor({ timeout: 20000 });
     check("[4단계] 유효한 편집은 '직접 편집'으로 저장", true);
     await page.screenshot({ path: "e2e-output/step4-samples.png", fullPage: true });
 
     await page.reload();
     await page.getByTestId("valid-count").waitFor({ timeout: 20000 });
-    check("[4단계] 새로고침 후에도 편집 내용 유지", (await page.getByLabel("createProduct 샘플 JSON").inputValue()).includes("무선 키보드"));
+    check("[4단계] 새로고침 후에도 편집 내용 유지", (await page.getByLabel("createItem 샘플 JSON").inputValue()).includes("무선 키보드"));
 
     const nav = page.getByRole("navigation", { name: "진행 단계" });
     check("[4단계] 샘플 생성 후 5단계 잠금 해제", (await nav.locator('[aria-disabled="true"]').count()) === 0);

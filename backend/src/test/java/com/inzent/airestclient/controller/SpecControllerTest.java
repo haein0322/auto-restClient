@@ -30,11 +30,12 @@ class SpecControllerTest {
 
   @Test
   void 샘플_목록을_조회한다() throws Exception {
+    // 화면에는 샘플 API 하나만 노출한다(나머지 명세는 자동 테스트 전용이라 이름으로만 불러올 수 있다).
     mvc.perform(get("/api/specs/samples"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
-        .andExpect(jsonPath("$.data.length()").value(3))
-        .andExpect(jsonPath("$.data[0].name").value("shop-sample"));
+        .andExpect(jsonPath("$.data.length()").value(1))
+        .andExpect(jsonPath("$.data[0].name").value("sample-api"));
   }
 
   @Test

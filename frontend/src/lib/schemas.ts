@@ -278,3 +278,10 @@ export const testOptionsFormSchema = z.object({
   confirmExternal: z.boolean(),
 });
 export type TestOptionsFormValues = z.infer<typeof testOptionsFormSchema>;
+
+/** 1단계 엔드포인트 목록에서 펼쳐 보여주는 미리보기 샘플(저장되지 않음) */
+export const samplePreviewSchema = z.object({
+  specId: z.number(),
+  samples: z.array(z.object({ operationId: z.string(), request: z.unknown() })),
+});
+export type SamplePreview = z.infer<typeof samplePreviewSchema>;

@@ -15,8 +15,9 @@ async function post(path, body) {
   return res;
 }
 
-async function readySpec() {
-  const reg = await (await post("/api/specs/samples/shop-sample")).json();
+/** 1~4단계를 API로 마친 명세. 기본은 DELETE·ID 연쇄 등을 검증할 수 있는 테스트용 대형 명세다. */
+async function readySpec(sampleName = "shop-sample") {
+  const reg = await (await post(`/api/specs/samples/${sampleName}`)).json();
   const id = reg.data.id;
   await (await post(`/api/specs/${id}/analysis`)).text(); // SSE를 끝까지 소비
   const client = await post(`/api/specs/${id}/client`);
@@ -47,6 +48,8 @@ try {
   await page.getByTestId("test-base-url").waitFor({ timeout: 20000 });
   const baseUrl = await page.getByTestId("test-base-url").inputValue();
   const apiKey = await page.getByTestId("test-api-key").inputValue();
+  // 명세의 서버 주소가 아니라 E2E 대상 백엔드의 Mock을 호출한다(E2E_API_URL로 포트를 바꿔도 동작).
+  const mockBase = `${API}/mock`;
   check("기본 Base URL이 채워짐", baseUrl.startsWith("http"), baseUrl);
   check("내장 Mock 데모 키가 채워짐", apiKey.length > 0, apiKey);
 
@@ -64,7 +67,7 @@ try {
   check("외부 호스트는 확인 없이 거부", alertText.includes("외부 서버 호출 확인"), alertText);
 
   // 5) 정상 실행(삭제 호출 미허용): 통과 + 건너뜀, 실패 0
-  await page.getByTestId("test-base-url").fill(baseUrl);
+  await page.getByTestId("test-base-url").fill(mockBase);
   await page.getByTestId("start-test").click();
   await page.getByTestId("count-passed").waitFor({ timeout: 90000 });
   const passed1 = await page.getByTestId("count-passed").innerText();
@@ -113,6 +116,16 @@ try {
   await page.getByRole("link", { name: /다음: 통신 테스트/ }).click();
   await page.waitForURL(`**/specs/${id}/test`);
   check("4단계에서 5단계로 이동", true);
+
+  // 11) 화면에 노출되는 "샘플 API"(3개 엔드포인트)도 내장 Mock으로 전부 통과
+  const sampleApiId = await readySpec("sample-api");
+  await page.goto(`${WEB}/specs/${sampleApiId}/test`);
+  await page.getByTestId("test-base-url").waitFor({ timeout: 20000 });
+  await page.getByTestId("test-base-url").fill(mockBase);
+  await page.getByTestId("start-test").click();
+  await page.getByTestId("count-passed").waitFor({ timeout: 90000 });
+  check("샘플 API: 3건 모두 통과", (await page.getByTestId("count-passed").innerText()).includes("3") && (await page.getByTestId("count-failed").innerText()).includes("0"));
+  check("샘플 API: 결과 표 행 3개", (await page.locator('[data-testid^="case-"]').count()) === 3);
 
   check("콘솔 오류 없음", consoleErrors.filter((e) => !e.includes("401") && !e.includes("400")).length === 0, consoleErrors.join(" | "));
 } catch (e) {

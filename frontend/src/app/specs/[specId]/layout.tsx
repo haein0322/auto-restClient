@@ -3,6 +3,7 @@
 import { useEffect, type ReactNode } from "react";
 import { useParams, usePathname } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { BackButton } from "@/components/workflow/BackButton";
 import { ErrorAlert } from "@/components/workflow/ErrorAlert";
 import { StepNav } from "@/components/workflow/StepNav";
 import { STEPS, type StepId } from "@/lib/workflow";
@@ -32,6 +33,7 @@ export default function SpecLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <StepNav current={current} specId={specId} status={detail?.summary.status} />
+      <BackButton current={current} specId={specId} />
       {loading && !detail && (
         <p className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" /> 명세를 불러오는 중...

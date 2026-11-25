@@ -16,25 +16,26 @@ import org.springframework.stereotype.Component;
 @Component
 public class SampleSpecProvider {
 
-  private record Sample(String fileName, SampleInfo info) {}
+  /** @param listed false이면 화면 목록에는 나오지 않지만 이름으로는 불러올 수 있다(자동 테스트용 명세). */
+  private record Sample(String fileName, SampleInfo info, boolean listed) {}
 
   private final Map<String, Sample> samples = new LinkedHashMap<>();
 
   public SampleSpecProvider() {
-    register("shop-sample", "shop-sample.yaml", "쇼핑몰 샘플 API (OpenAPI 3.0)",
-        "상품·고객·주문 12개 엔드포인트. 내장 Mock 서버와 연동되어 통신 테스트까지 가능합니다.");
-    register("legacy-v2-sample", "legacy-v2-sample.json", "레거시 메모 API (Swagger 2.0)",
-        "Swagger 2.0 파싱 호환성 확인용 소형 샘플입니다.");
-    register("invalid-sample", "invalid-sample.yaml", "오류 케이스 샘플",
-        "의도적으로 잘못된 명세입니다. 업로드 오류 표시를 확인할 때 사용하세요.");
+    register("sample-api", "sample-api.yaml", "샘플 API",
+        "엔드포인트 3개로 구성된 샘플입니다. 내장 Mock 서버와 연동되어 통신 테스트까지 해볼 수 있습니다.", true);
+    // 아래 명세는 자동 테스트(회귀·호환성·오류 처리)에서만 사용하므로 목록에 표시하지 않는다.
+    register("shop-sample", "shop-sample.yaml", "테스트용 대형 명세", "자동 테스트 전용", false);
+    register("legacy-v2-sample", "legacy-v2-sample.json", "테스트용 Swagger 2.0 명세", "자동 테스트 전용", false);
+    register("invalid-sample", "invalid-sample.yaml", "테스트용 오류 명세", "자동 테스트 전용", false);
   }
 
-  private void register(String name, String fileName, String title, String description) {
-    samples.put(name, new Sample(fileName, new SampleInfo(name, title, description)));
+  private void register(String name, String fileName, String title, String description, boolean listed) {
+    samples.put(name, new Sample(fileName, new SampleInfo(name, title, description), listed));
   }
 
   public List<SampleInfo> list() {
-    return samples.values().stream().map(Sample::info).toList();
+    return samples.values().stream().filter(Sample::listed).map(Sample::info).toList();
   }
 
   public String load(String name) {

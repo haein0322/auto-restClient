@@ -68,5 +68,13 @@ public final class MockModels {
       OrderStatus status,
       Instant createdAt) {}
 
+  public record ItemRequest(
+      @NotBlank @Size(max = 100) String name,
+      @Size(max = 500) String description,
+      @NotNull @DecimalMin("0") BigDecimal price) {}
+
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  public record Item(Long id, String name, String description, BigDecimal price, Instant createdAt) {}
+
   public record ErrorResponse(String code, String message) {}
 }

@@ -10,6 +10,8 @@ import com.inzent.airestclient.domain.ApiSpec;
 import com.inzent.airestclient.domain.SampleData;
 import com.inzent.airestclient.domain.SpecStatus;
 import com.inzent.airestclient.dto.SampleDtos.SampleItem;
+import com.inzent.airestclient.dto.SampleDtos.SamplePreview;
+import com.inzent.airestclient.dto.SampleDtos.SamplePreviewItem;
 import com.inzent.airestclient.dto.SampleDtos.SampleSetView;
 import com.inzent.airestclient.dto.SpecDtos.EndpointInfo;
 import com.inzent.airestclient.sample.DefaultSampleBuilder;
@@ -92,6 +94,23 @@ public class SampleGenerationService {
       throw new BusinessException(ErrorCode.SAMPLES_NOT_FOUND);
     }
     return view(contextOf(spec, specId), specId, rows, List.of());
+  }
+
+  /**
+   * 1단계 화면용 미리보기. 단계 잠금과 무관하게 명세만으로 규칙 기반 샘플을 만들어 돌려준다.
+   * AI를 호출하지 않고 저장도 하지 않으므로 비용·부작용이 없다.
+   */
+  public SamplePreview preview(Long specId) {
+    Context ctx = contextOf(specService.getOrThrow(specId), specId);
+    DefaultSampleBuilder builder = new DefaultSampleBuilder(ctx.api());
+    List<SamplePreviewItem> items = ctx.endpoints().stream()
+        .filter(ep -> ctx.targets().containsKey(ep.operationId()))
+        .map(ep -> {
+          Target target = ctx.targets().get(ep.operationId());
+          return new SamplePreviewItem(ep.operationId(), builder.build(target.operation(), target.item()));
+        })
+        .toList();
+    return new SamplePreview(specId, items);
   }
 
   // ---------------- 내부 ----------------

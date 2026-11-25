@@ -5,6 +5,7 @@ import {
   progressEventSchema,
   sampleInfoSchema,
   sampleItemSchema,
+  samplePreviewSchema,
   sampleSetViewSchema,
   specDetailSchema,
   specSummarySchema,
@@ -18,6 +19,7 @@ import {
   type ProgressEvent,
   type SampleInfo,
   type SampleItem,
+  type SamplePreview,
   type SampleSetView,
   type SpecDetail,
   type SpecSummary,
@@ -161,6 +163,10 @@ export const api = {
       throw e;
     }
   },
+
+  /** 1단계 미리보기: 명세만으로 만든 규칙 기반 샘플(저장 안 함) */
+  previewSamples: (id: number): Promise<SamplePreview> =>
+    request(`/api/specs/${id}/samples/preview`, samplePreviewSchema),
 
   generateSamples: (id: number): Promise<SampleSetView> =>
     request(`/api/specs/${id}/samples`, sampleSetViewSchema, { method: "POST" }),
