@@ -113,7 +113,7 @@ try {
 
   // 10) 4단계 → 5단계 이동 링크 및 StepNav 상태
   await page.goto(`${WEB}/specs/${id}/samples`);
-  await page.getByRole("link", { name: /다음: 통신 테스트/ }).click();
+  await page.getByRole("link", { name: "다음", exact: true }).click();
   await page.waitForURL(`**/specs/${id}/test`);
   check("4단계에서 5단계로 이동", true);
 

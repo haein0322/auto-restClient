@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EndpointTable } from "@/components/workflow/EndpointTable";
+import { StepFooter } from "@/components/workflow/StepFooter";
 import { SpecSummaryCard } from "@/components/workflow/SpecSummaryCard";
 import { api } from "@/lib/api";
 import { stepPath } from "@/lib/workflow";
@@ -68,7 +66,8 @@ export default function UploadResultPage() {
         <CardHeader>
           <CardTitle>엔드포인트 {detail.endpoints.length}개</CardTitle>
           <CardDescription>
-            이 목록을 기준으로 AI 분석과 RestClient 코드 생성이 진행됩니다. 왼쪽 화살표를 누르면 샘플 데이터를 볼 수 있습니다.
+            이 목록을 기준으로 AI 분석과 RestClient 코드 생성이 진행됩니다. 왼쪽 화살표를 누르면 샘플 데이터를 볼 수
+            있습니다.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -76,11 +75,7 @@ export default function UploadResultPage() {
         </CardContent>
       </Card>
 
-      <div className="flex justify-end">
-        <Link href={stepPath("analysis", detail.summary.id)} className={buttonVariants({ size: "lg" })}>
-          다음: AI 명세 분석 <ArrowRight />
-        </Link>
-      </div>
+      <StepFooter current="upload" specId={detail.summary.id} nextHref={stepPath("analysis", detail.summary.id)} />
     </>
   );
 }

@@ -3,12 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowRight, Loader2, Wand2 } from "lucide-react";
+import { Loader2, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { StepFooter } from "@/components/workflow/StepFooter";
 import { ErrorAlert } from "@/components/workflow/ErrorAlert";
 import { SampleCard } from "@/components/workflow/SampleCard";
 import { api, ApiError } from "@/lib/api";
@@ -51,7 +52,11 @@ export default function SamplesPage() {
         return current;
       }
       const samples = current.samples.map((s) => (s.operationId === updated.operationId ? updated : s));
-      return { ...current, samples, validCount: samples.filter((s) => s.valid).length };
+      return {
+        ...current,
+        samples,
+        validCount: samples.filter((s) => s.valid).length,
+      };
     });
   }, []);
 
@@ -105,15 +110,18 @@ export default function SamplesPage() {
 
   if (!isStepUnlocked(4, detail.summary.status)) {
     return (
-      <Alert data-testid="step-locked">
-        <AlertTitle>이전 단계를 먼저 완료해야 합니다</AlertTitle>
-        <AlertDescription>
-          샘플 데이터는 생성된 RestClient 기준으로 만듭니다.{" "}
-          <Link href={stepPath("client", specId)} className="font-medium underline underline-offset-4">
-            RestClient 생성으로 이동
-          </Link>
-        </AlertDescription>
-      </Alert>
+      <>
+        <Alert data-testid="step-locked">
+          <AlertTitle>이전 단계를 먼저 완료해야 합니다</AlertTitle>
+          <AlertDescription>
+            샘플 데이터는 생성된 RestClient 기준으로 만듭니다.{" "}
+            <Link href={stepPath("client", specId)} className="font-medium underline underline-offset-4">
+              RestClient 생성으로 이동
+            </Link>
+          </AlertDescription>
+        </Alert>
+        <StepFooter current="samples" specId={specId} />
+      </>
     );
   }
 
@@ -125,8 +133,9 @@ export default function SamplesPage() {
         <CardHeader>
           <CardTitle>샘플 데이터 자동 생성</CardTitle>
           <CardDescription>
-            엔드포인트별 요청 샘플({"{pathParams, queryParams, headers, body}"})을 만들고, 명세(필수값·enum·범위·형식)로 검증합니다.
-            AI가 만든 값이 검증을 통과하지 못하면 오류를 알려 다시 생성하고, 끝내 실패하면 규칙 기반으로 대체합니다.
+            엔드포인트별 요청 샘플({"{pathParams, queryParams, headers, body}"}
+            )을 만들고, 명세(필수값·enum·범위·형식)로 검증합니다. AI가 만든 값이 검증을 통과하지 못하면 오류를 알려 다시
+            생성하고, 끝내 실패하면 규칙 기반으로 대체합니다.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -171,18 +180,17 @@ export default function SamplesPage() {
       {set && (
         <div className="flex flex-col gap-4">
           {set.samples.map((item) => (
-            <SampleCard key={`${item.operationId}-${item.updatedAt}`} item={item} onSave={save} onRegenerate={regenerate} />
+            <SampleCard
+              key={`${item.operationId}-${item.updatedAt}`}
+              item={item}
+              onSave={save}
+              onRegenerate={regenerate}
+            />
           ))}
         </div>
       )}
 
-      {set && hasValid && (
-        <div className="flex justify-end">
-          <Link href={stepPath("test", specId)} className={buttonVariants({ size: "lg" })}>
-            다음: 통신 테스트 <ArrowRight />
-          </Link>
-        </div>
-      )}
+      <StepFooter current="samples" specId={specId} nextHref={set && hasValid ? stepPath("test", specId) : undefined} />
     </>
   );
 }

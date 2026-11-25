@@ -80,6 +80,14 @@ try {
 
     const nav = page.getByRole("navigation", { name: "진행 단계" });
     check("[1단계] 등록 직후 3~5단계는 잠김", (await nav.locator('[aria-disabled="true"]').count()) === 3);
+    // 하단 이동 줄: 왼쪽 "이전", 오른쪽 "다음"이 같은 줄에 있다.
+    const back = page.getByTestId("back-button");
+    const next = page.getByTestId("next-button");
+    const backBox = await back.boundingBox();
+    const nextBox = await next.boundingBox();
+    check("[1단계] 이전 버튼 문구는 '이전'", (await back.innerText()).trim() === "이전");
+    check("[1단계] 다음 버튼 문구는 '다음'", (await next.innerText()).trim() === "다음");
+    check("[1단계] 이전(왼쪽)·다음(오른쪽)이 같은 줄에 배치", backBox.x < nextBox.x && Math.abs(backBox.y - nextBox.y) < 8, JSON.stringify([backBox, nextBox]));
     check("[1단계] 현재 단계 표시(aria-current)", (await nav.locator('[aria-current="step"]').count()) === 1);
   });
 
@@ -153,7 +161,7 @@ try {
 
   // ───────────── 3단계: RestClient 생성 ─────────────
   await step("3단계 생성", async () => {
-    await page.getByRole("link", { name: /다음: RestClient 생성/ }).click();
+    await page.getByRole("link", { name: "다음", exact: true }).click();
     await page.waitForURL(`**/specs/${specId}/client`);
     const pkg = page.locator("#basePackage");
     await pkg.waitFor({ timeout: 20000 });
@@ -193,7 +201,7 @@ try {
 
   // ───────────── 4단계: 샘플 데이터 ─────────────
   await step("4단계 샘플", async () => {
-    await page.getByRole("link", { name: /다음: 샘플 데이터/ }).click().catch(() => page.goto(`${WEB}/specs/${specId}/samples`));
+    await page.getByRole("link", { name: "다음", exact: true }).click().catch(() => page.goto(`${WEB}/specs/${specId}/samples`));
     await page.waitForURL(`**/specs/${specId}/samples`);
     await page.getByTestId("generate-samples").waitFor({ timeout: 20000 });
 
@@ -245,7 +253,7 @@ try {
 
     const nav = page.getByRole("navigation", { name: "진행 단계" });
     check("[4단계] 샘플 생성 후 5단계 잠금 해제", (await nav.locator('[aria-disabled="true"]').count()) === 0);
-    await page.getByRole("link", { name: /다음: 통신 테스트/ }).click();
+    await page.getByRole("link", { name: "다음", exact: true }).click();
     await page.waitForURL(`**/specs/${specId}/test`);
     check("[4단계] 5단계로 이동", true);
   });

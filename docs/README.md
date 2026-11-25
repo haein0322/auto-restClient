@@ -112,7 +112,7 @@ cd frontend && npx tsc --noEmit && npx eslint src
 
 # 브라우저 E2E (백엔드·프론트엔드를 먼저 실행)
 cd e2e && npm install && npx playwright install chromium
-npm run test:step1-4   # 1~4단계 (44건)
+npm run test:step1-4   # 1~4단계 (47건)
 npm run test:step5     # 5단계 (19건)
 npm test               # 전체
 ```

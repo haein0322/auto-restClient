@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowRight, Loader2, Sparkles } from "lucide-react";
-import { buttonVariants, Button } from "@/components/ui/button";
+import { Loader2, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnalysisReportView } from "@/components/workflow/AnalysisReportView";
+import { StepFooter } from "@/components/workflow/StepFooter";
 import { ErrorAlert } from "@/components/workflow/ErrorAlert";
 import { api, ApiError } from "@/lib/api";
 import type { AnalysisView, ProgressEvent } from "@/lib/schemas";
@@ -50,7 +50,11 @@ export default function AnalysisPage() {
     abortRef.current = controller;
     setRunning(true);
     setError(null);
-    setProgress({ step: "PREPARE", message: "분석을 시작합니다...", percent: 0 });
+    setProgress({
+      step: "PREPARE",
+      message: "분석을 시작합니다...",
+      percent: 0,
+    });
     try {
       const result = await api.runAnalysis(specId, setProgress, controller.signal);
       setView(result);
@@ -108,16 +112,9 @@ export default function AnalysisPage() {
         </CardContent>
       </Card>
 
-      {view && (
-        <>
-          <AnalysisReportView view={view} endpoints={detail.endpoints} />
-          <div className="flex justify-end">
-            <Link href={stepPath("client", specId)} className={buttonVariants({ size: "lg" })}>
-              다음: RestClient 생성 <ArrowRight />
-            </Link>
-          </div>
-        </>
-      )}
+      {view && <AnalysisReportView view={view} endpoints={detail.endpoints} />}
+
+      <StepFooter current="analysis" specId={specId} nextHref={view ? stepPath("client", specId) : undefined} />
     </>
   );
 }

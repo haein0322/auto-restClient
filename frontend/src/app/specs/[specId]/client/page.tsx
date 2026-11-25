@@ -5,13 +5,14 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight, CheckCircle2, Code2, Download, Loader2, XCircle } from "lucide-react";
+import { CheckCircle2, Code2, Download, Loader2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { CodeTreeViewer } from "@/components/workflow/CodeTreeViewer";
+import { StepFooter } from "@/components/workflow/StepFooter";
 import { ErrorAlert } from "@/components/workflow/ErrorAlert";
 import { api, ApiError } from "@/lib/api";
 import { packageFormSchema, type ClientView, type PackageFormValues } from "@/lib/schemas";
@@ -108,15 +109,18 @@ export default function ClientPage() {
 
   if (!isStepUnlocked(3, detail.summary.status)) {
     return (
-      <Alert data-testid="step-locked">
-        <AlertTitle>이전 단계를 먼저 완료해야 합니다</AlertTitle>
-        <AlertDescription>
-          RestClient 코드는 AI 명세 분석 결과의 메서드명을 사용해 생성합니다.{" "}
-          <Link href={stepPath("analysis", specId)} className="font-medium underline underline-offset-4">
-            AI 명세 분석으로 이동
-          </Link>
-        </AlertDescription>
-      </Alert>
+      <>
+        <Alert data-testid="step-locked">
+          <AlertTitle>이전 단계를 먼저 완료해야 합니다</AlertTitle>
+          <AlertDescription>
+            RestClient 코드는 AI 명세 분석 결과의 메서드명을 사용해 생성합니다.{" "}
+            <Link href={stepPath("analysis", specId)} className="font-medium underline underline-offset-4">
+              AI 명세 분석으로 이동
+            </Link>
+          </AlertDescription>
+        </Alert>
+        <StepFooter current="client" specId={specId} />
+      </>
     );
   }
 
@@ -207,7 +211,12 @@ export default function ClientPage() {
                   <CardTitle>생성된 소스</CardTitle>
                   <CardDescription>{new Date(client.generatedAt).toLocaleString("ko-KR")} 생성</CardDescription>
                 </div>
-                <Button variant="outline" onClick={download} disabled={!client.compiled || downloading} data-testid="download-client">
+                <Button
+                  variant="outline"
+                  onClick={download}
+                  disabled={!client.compiled || downloading}
+                  data-testid="download-client"
+                >
                   {downloading ? <Loader2 className="animate-spin" /> : <Download />}
                   ZIP 다운로드
                 </Button>
@@ -217,16 +226,14 @@ export default function ClientPage() {
               <CodeTreeViewer key={client.generatedAt} files={client.files} />
             </CardContent>
           </Card>
-
-          {client.compiled && (
-            <div className="flex justify-end">
-              <Link href={stepPath("samples", specId)} className={buttonVariants({ size: "lg" })}>
-                다음: 샘플 데이터 <ArrowRight />
-              </Link>
-            </div>
-          )}
         </>
       )}
+
+      <StepFooter
+        current="client"
+        specId={specId}
+        nextHref={client?.compiled ? stepPath("samples", specId) : undefined}
+      />
     </>
   );
 }

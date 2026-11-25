@@ -9,17 +9,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { StepFooter } from "@/components/workflow/StepFooter";
 import { ErrorAlert } from "@/components/workflow/ErrorAlert";
 import { TestOptionsForm } from "@/components/workflow/TestOptionsForm";
 import { TestResultTable } from "@/components/workflow/TestResultTable";
 import { api, ApiError } from "@/lib/api";
-import type {
-  ProgressEvent,
-  TestDefaults,
-  TestOptionsFormValues,
-  TestRunSummary,
-  TestRunView,
-} from "@/lib/schemas";
+import type { ProgressEvent, TestDefaults, TestOptionsFormValues, TestRunSummary, TestRunView } from "@/lib/schemas";
 import { isStepUnlocked, stepPath } from "@/lib/workflow";
 import { useWorkflowStore } from "@/stores/workflowStore";
 
@@ -88,7 +83,11 @@ export default function TestPage() {
       abortRef.current = controller;
       setRunning(true);
       setError(null);
-      setProgress({ step: "PREPARE", message: "테스트를 시작합니다...", percent: 0 });
+      setProgress({
+        step: "PREPARE",
+        message: "테스트를 시작합니다...",
+        percent: 0,
+      });
       try {
         const result = await api.runTest(specId, values, setProgress, controller.signal);
         setRun(result);
@@ -137,15 +136,18 @@ export default function TestPage() {
 
   if (!unlocked) {
     return (
-      <Alert data-testid="step-locked">
-        <AlertTitle>이전 단계를 먼저 완료해야 합니다</AlertTitle>
-        <AlertDescription>
-          통신 테스트는 생성된 RestClient와 샘플 데이터로 실행합니다.{" "}
-          <Link href={stepPath("samples", specId)} className="font-medium underline underline-offset-4">
-            샘플 데이터로 이동
-          </Link>
-        </AlertDescription>
-      </Alert>
+      <>
+        <Alert data-testid="step-locked">
+          <AlertTitle>이전 단계를 먼저 완료해야 합니다</AlertTitle>
+          <AlertDescription>
+            통신 테스트는 생성된 RestClient와 샘플 데이터로 실행합니다.{" "}
+            <Link href={stepPath("samples", specId)} className="font-medium underline underline-offset-4">
+              샘플 데이터로 이동
+            </Link>
+          </AlertDescription>
+        </Alert>
+        <StepFooter current="test" specId={specId} />
+      </>
     );
   }
 
@@ -155,8 +157,8 @@ export default function TestPage() {
         <CardHeader>
           <CardTitle>API 통신 테스트</CardTitle>
           <CardDescription>
-            생성된 RestClient로 샘플을 실제 호출합니다. 호출 순서는 AI 분석 결과를 따르고, 앞 호출에서 얻은 ID를 뒤 호출에 넘깁니다.
-            응답은 상태 코드와 명세 스키마로 검증합니다.
+            생성된 RestClient로 샘플을 실제 호출합니다. 호출 순서는 AI 분석 결과를 따르고, 앞 호출에서 얻은 ID를 뒤
+            호출에 넘깁니다. 응답은 상태 코드와 명세 스키마로 검증합니다.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -240,7 +242,8 @@ export default function TestPage() {
             {/* 실행이 바뀌면 펼침 상태를 초기화한다(원인 분석 갱신 시에는 runId가 같아 유지된다). */}
             <TestResultTable
               key={run.runId}
-              cases={run.cases} diagnoses={run.diagnosis?.cases ?? []}
+              cases={run.cases}
+              diagnoses={run.diagnosis?.cases ?? []}
               diagnosisProvider={run.diagnosis?.provider}
             />
           </CardContent>
@@ -275,6 +278,8 @@ export default function TestPage() {
           </CardContent>
         </Card>
       )}
+
+      <StepFooter current="test" specId={specId} />
     </>
   );
 }
